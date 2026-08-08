@@ -1,1 +1,0 @@
-# buku-tamu-puskesmas-pakutandang
