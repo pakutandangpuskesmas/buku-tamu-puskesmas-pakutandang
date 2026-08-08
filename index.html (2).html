@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Tamu Digital Puskesmas Pakutandang</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- SheetJS Library for Excel (.xlsx) Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        tealBrand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #f1f5f9 100%);
+            background-attachment: fixed;
+        }
+
+        /* Ambient Background Blobs untuk tampilan dinamis */
+        .bg-blob {
+            position: fixed;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: #99f6e4;
+            border-radius: 50%;
+        }
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: #bae6fd;
+            border-radius: 50%;
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 25px -5px rgba(15, 118, 110, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0d9488;
+        }
+
+        .canvas-container {
+            position: relative;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+    <!-- Ornamen Background Dibelakang -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <!-- Top Header Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-tealBrand-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <!-- Brand Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div class="shrink-0 flex items-center justify-center p-1 bg-white rounded-2xl shadow-sm border border-slate-100">
+                    <img id="appLogo" 
+                         src="https://i.postimg.cc/1RfL3xsN/1746494588LOGO.png" 
+                         alt="Logo Puskesmas Pakutandang" 
+                         class="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow-sm"
+                         onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-tealBrand-600 to-emerald-500 flex items-center justify-center text-white font-bold text-xl shadow-md\'><i class=\'fa-solid fa-notes-medical\'></i></div>';">
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight leading-tight">BUKU TAMU DIGITAL</h1>
+                    <p class="text-[11px] sm:text-xs font-semibold text-tealBrand-700 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Puskesmas Pakutandang
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Actions & Live Clock -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openRecapModal()" class="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-tealBrand-600 hover:from-emerald-700 hover:to-tealBrand-700 active:scale-95 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition">
+                    <i class="fa-solid fa-file-excel text-base"></i>
+                    <span class="hidden sm:inline">Rekap Excel</span>
+                </button>
+
+                <div class="bg-white/80 backdrop-blur border border-tealBrand-100/80 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl text-right shadow-sm">
+                    <div id="liveClock" class="text-xs sm:text-sm font-bold text-tealBrand-900 font-mono tracking-wider">00:00:00</div>
+                    <div id="liveDate" class="text-[10px] sm:text-xs font-semibold text-slate-500">Senin, 1 Jan 2026</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: Form Kios Pengunjung (7 cols) -->
+            <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-7 space-y-6">
+                
+                <div class="border-b border-tealBrand-100/80 pb-4">
+                    <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-tealBrand-100 text-tealBrand-700 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-user-pen"></i>
+                        </span>
+                        Registrasi Tamu
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Silakan isi data diri Anda untuk keperluan pendataan kunjungan.</p>
+                </div>
+
+                <form id="guestForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <!-- Nama Lengkap -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Nama Lengkap <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                            <input type="text" id="inputName" required placeholder="Contoh: Budi Santoso, S.T." 
+                                class="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-medium focus:bg-white focus:border-tealBrand-500 focus:ring-4 focus:ring-tealBrand-500/10 transition outline-none shadow-sm">
+                        </div>
+                    </div>
+
+                    <!-- Grid: Telepon & Instansi -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- No. HP/WA -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                No. Telepon / WA <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                                <input type="tel" id="inputPhone" required placeholder="081234567890" 
+                                    class="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-medium focus:bg-white focus:border-tealBrand-500 focus:ring-4 focus:ring-tealBrand-500/10 transition outline-none shadow-sm">
+                            </div>
+                        </div>
+
+                        <!-- Instansi / Asal -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Instansi / Asal <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-building-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                                <input type="text" id="inputOrigin" required placeholder="Dinas Kesehatan / Masyarakat Umum" 
+                                    class="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-medium focus:bg-white focus:border-tealBrand-500 focus:ring-4 focus:ring-tealBrand-500/10 transition outline-none shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bagian / Tujuan -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Bagian / Tujuan Unit <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fa-solid fa-hospital-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                            <select id="inputTarget" required class="w-full pl-10 pr-4 py-2.5 bg-white/80 border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-medium focus:bg-white focus:border-tealBrand-500 focus:ring-4 focus:ring-tealBrand-500/10 transition outline-none appearance-none shadow-sm">
+                                <option value="" disabled selected>-- Pilih Tujuan Unit Kerja --</option>
+                                <option value="Kepala Puskesmas">Kepala Puskesmas</option>
+                                <option value="Tata Usaha & Sekretariat">Tata Usaha & Sekretariat</option>
+                                <option value="Poli Umum">Poli Umum</option>
+                                <option value="Poli Gigi">Poli Gigi</option>
+                                <option value="Poli KIA & Imunisasi">Poli KIA & Imunisasi</option>
+                                <option value="Rekam Medis">Rekam Medis</option>
+                                <option value="Farmasi / Apotek">Farmasi / Apotek</option>
+                                <option value="Laboratorium">Laboratorium</option>
+                                <option value="Lainnya">Lainnya / Tamu Umum</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- Maksud / Keperluan -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Maksud & Keperluan <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea id="inputPurpose" required rows="2" placeholder="Jelaskan secara singkat keperluan kunjungan Anda..." 
+                            class="w-full px-4 py-2.5 bg-white/80 border border-slate-200/90 rounded-2xl text-xs sm:text-sm font-medium focus:bg-white focus:border-tealBrand-500 focus:ring-4 focus:ring-tealBrand-500/10 transition outline-none resize-none shadow-sm"></textarea>
+                    </div>
+
+                    <!-- Tanda Tangan Digital Pad -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                Tanda Tangan Digital <span class="text-rose-500">*</span>
+                            </label>
+                            <button type="button" onclick="clearSignature()" class="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 hover:underline">
+                                <i class="fa-solid fa-rotate-right"></i> Reset Tanda Tangan
+                            </button>
+                        </div>
+
+                        <div class="canvas-container bg-white rounded-2xl border-2 border-dashed border-tealBrand-200 hover:border-tealBrand-500 transition overflow-hidden shadow-inner">
+                            <canvas id="signatureCanvas" class="w-full h-32 cursor-crosshair"></canvas>
+                            <div id="signaturePlaceholder" class="absolute inset-0 pointer-events-none flex items-center justify-center text-slate-400 text-xs gap-2">
+                                <i class="fa-solid fa-signature text-base text-tealBrand-500/50"></i>
+                                <span>Goreskan tanda tangan di sini</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-3.5 px-6 bg-gradient-to-r from-tealBrand-600 to-emerald-600 hover:from-tealBrand-700 hover:to-emerald-700 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-tealBrand-600/25 flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Simpan Kunjungan</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- RIGHT COLUMN: Realtime Guest List & Stats (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass-card p-4 rounded-3xl flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-tealBrand-100 text-tealBrand-700 flex items-center justify-center font-bold text-lg shadow-inner">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Hari Ini</span>
+                            <span id="statToday" class="text-xl font-extrabold text-slate-900">0</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-3xl flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg shadow-inner">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Kunjungan</span>
+                            <span id="statTotal" class="text-xl font-extrabold text-slate-900">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guest List Card -->
+                <div class="glass-card rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-tealBrand-600"></i> Pengunjung Terakhir
+                        </h3>
+                        <button onclick="confirmClearAll()" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition text-xs font-semibold" title="Reset Semua Data">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="renderGuestList()" placeholder="Cari nama, instansi, atau tujuan..." 
+                            class="w-full pl-9 pr-4 py-2 bg-white/80 border border-slate-200/80 rounded-xl text-xs font-medium focus:bg-white focus:border-tealBrand-500 outline-none shadow-sm">
+                    </div>
+
+                    <!-- Scrollable Guest Cards -->
+                    <div id="guestListContainer" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                        <!-- Dynamic guest rows will be rendered here -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Detail Tamu -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white/95 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white space-y-4 relative animate-in fade-in zoom-in duration-150">
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-tealBrand-100 text-tealBrand-700 flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div>
+                    <h3 id="modalName" class="font-extrabold text-slate-900 text-base">Nama Pengunjung</h3>
+                    <p id="modalTime" class="text-xs text-slate-500">Waktu Kunjungan</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-2.5 text-xs">
+                <div class="flex justify-between border-b border-slate-200/60 pb-2">
+                    <span class="text-slate-500 font-semibold">No. Telepon/WA:</span>
+                    <span id="modalPhone" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200/60 pb-2">
+                    <span class="text-slate-500 font-semibold">Instansi / Asal:</span>
+                    <span id="modalOrigin" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200/60 pb-2">
+                    <span class="text-slate-500 font-semibold">Tujuan Unit:</span>
+                    <span id="modalTarget" class="font-bold text-tealBrand-700">-</span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-500 font-semibold block mb-1">Maksud Keperluan:</span>
+                    <p id="modalPurpose" class="font-medium text-slate-800 bg-white p-2.5 rounded-xl border border-slate-200/80 text-xs leading-relaxed">-</p>
+                </div>
+            </div>
+
+            <div>
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">Tanda Tangan Digital:</span>
+                <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200 flex justify-center">
+                    <img id="modalSignature" src="" alt="Tanda Tangan" class="h-20 object-contain">
+                </div>
+            </div>
+
+            <button onclick="closeModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Verifikasi Password Admin -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white/95 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-white text-center space-y-4 relative animate-in fade-in zoom-in duration-150">
+            <button onclick="closePasswordModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-tealBrand-100 text-tealBrand-700 flex items-center justify-center text-xl font-bold mx-auto">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-base">Akses Rekap Terkunci</h3>
+                <p class="text-xs text-slate-500 mt-1">Masukkan kata sandi petugas/admin untuk mengunduh dan melihat rekapan Excel.</p>
+            </div>
+
+            <form onsubmit="handlePasswordSubmit(event)" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">Kata Sandi Admin</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="password" id="adminPasswordInput" required placeholder="Masukkan kata sandi..." 
+                            class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-tealBrand-500 outline-none">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 text-xs">
+                            <i id="passwordEyeIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 flex justify-between">
+                        <span>Kata sandi standar: <strong class="text-tealBrand-700 font-mono">admin123</strong></span>
+                    </p>
+                </div>
+
+                <div id="passwordErrorMsg" class="hidden text-rose-500 text-xs font-semibold bg-rose-50 p-2 rounded-xl border border-rose-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-exclamation text-xs"></i>
+                    <span>Kata sandi salah! Silakan coba lagi.</span>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-tealBrand-600 hover:bg-tealBrand-700 text-white font-bold text-xs rounded-xl shadow-md shadow-tealBrand-600/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-unlock"></i>
+                    <span>Buka Rekapan</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Rekapitulasi Excel -->
+    <div id="recapModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white/95 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-white space-y-5 relative animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeRecapModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold border border-emerald-200">
+                    <i class="fa-solid fa-file-excel"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Rekapitulasi Kunjungan Excel</h3>
+                    <p class="text-xs text-slate-500">Unduh laporan resmi dalam format Excel (.xlsx)</p>
+                </div>
+            </div>
+
+            <!-- Filter Periode Rekapan -->
+            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Periode Rekapan:</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type="button" onclick="setRecapFilter('today')" id="filterTodayBtn" class="recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-emerald-600 text-white border-emerald-600 transition">Hari Ini</button>
+                    <button type="button" onclick="setRecapFilter('month')" id="filterMonthBtn" class="recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition">Bulan Ini</button>
+                    <button type="button" onclick="setRecapFilter('year')" id="filterYearBtn" class="recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition">Tahun Ini</button>
+                    <button type="button" onclick="setRecapFilter('all')" id="filterAllBtn" class="recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition">Semua</button>
+                </div>
+            </div>
+
+            <!-- Preview Card Stats -->
+            <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <span class="text-[11px] font-semibold text-emerald-700 block">Total Kunjungan</span>
+                    <span id="recapTotalCount" class="text-xl font-black text-emerald-900">0</span>
+                </div>
+                <div class="p-3 bg-tealBrand-50 rounded-2xl border border-tealBrand-100">
+                    <span class="text-[11px] font-semibold text-tealBrand-700 block">Tujuan Terpopuler</span>
+                    <span id="recapTopTarget" class="text-xs font-bold text-tealBrand-900 truncate block mt-1">-</span>
+                </div>
+            </div>
+
+            <!-- Table Preview Rekap per Bagian -->
+            <div>
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Ringkasan per Bagian / Tujuan:</span>
+                <div class="max-h-48 overflow-y-auto rounded-2xl border border-slate-200 text-xs">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-100 sticky top-0 text-slate-600 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-2.5">Bagian / Tujuan</th>
+                                <th class="p-2.5 text-right">Jumlah</th>
+                                <th class="p-2.5 text-right">Persentase</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recapTableBody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <button onclick="exportToExcel()" class="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-sm rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-file-excel text-lg"></i> Unduh File Excel (.xlsx)
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Reset Data -->
+    <div id="confirmClearModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white/95 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-white text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-bold mx-auto">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-base">Hapus Semua Data?</h3>
+                <p class="text-xs text-slate-500 mt-1">Tindakan ini akan menghapus seluruh riwayat kunjungan tamu dari penyimpanan perangkat ini.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">Batal</button>
+                <button onclick="clearAllData()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Footer -->
+    <footer class="bg-white/80 backdrop-blur-md border-t border-tealBrand-100/80 py-3.5 text-center text-xs text-slate-500 font-medium">
+        <p>&copy; 2026 Puskesmas Pakutandang. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Data State
+        let guests = JSON.parse(localStorage.getItem('puskesmas_guests_simple')) || [];
+        let isSigning = false;
+        let signatureCanvas, ctx;
+        let currentRecapFilter = 'today';
+
+        // On Load initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            initCanvas();
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderGuestList();
+            updateStats();
+        });
+
+        // Realtime Clock Handler
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+            
+            const clockEl = document.getElementById('liveClock');
+            const dateEl = document.getElementById('liveDate');
+            if (clockEl) clockEl.textContent = timeStr;
+            if (dateEl) dateEl.textContent = dateStr;
+        }
+
+        // Canvas Signature Logic
+        function initCanvas() {
+            signatureCanvas = document.getElementById('signatureCanvas');
+            if (!signatureCanvas) return;
+            
+            ctx = signatureCanvas.getContext('2d');
+
+            // Responsive Canvas Resolution
+            const rect = signatureCanvas.parentElement.getBoundingClientRect();
+            signatureCanvas.width = rect.width;
+            signatureCanvas.height = 128; // 32 * 4px
+
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#0f766e'; // teal color
+
+            // Mouse Events
+            signatureCanvas.addEventListener('mousedown', startDrawing);
+            signatureCanvas.addEventListener('mousemove', draw);
+            signatureCanvas.addEventListener('mouseup', stopDrawing);
+            signatureCanvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch Events for Tablet/Mobile
+            signatureCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                signatureCanvas.dispatchEvent(mouseEvent);
+            });
+
+            signatureCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                signatureCanvas.dispatchEvent(mouseEvent);
+            });
+
+            signatureCanvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent('mouseup', {});
+                signatureCanvas.dispatchEvent(mouseEvent);
+            });
+        }
+
+        function startDrawing(e) {
+            isSigning = true;
+            const rect = signatureCanvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            document.getElementById('signaturePlaceholder').classList.add('hidden');
+        }
+
+        function draw(e) {
+            if (!isSigning) return;
+            const rect = signatureCanvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isSigning = false;
+        }
+
+        function clearSignature() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            document.getElementById('signaturePlaceholder').classList.remove('hidden');
+        }
+
+        function isCanvasBlank() {
+            if (!signatureCanvas) return true;
+            const pixelBuffer = new Uint32Array(
+                ctx.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height).data.buffer
+            );
+            return !pixelBuffer.some(color => color !== 0);
+        }
+
+        // Handle Form Submit
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            if (isCanvasBlank()) {
+                showToast('Harap bubuhkan tanda tangan digital Anda!', 'warning');
+                return;
+            }
+
+            const signatureData = signatureCanvas.toDataURL('image/png');
+
+            const newGuest = {
+                id: Date.now().toString(),
+                name: document.getElementById('inputName').value.trim(),
+                phone: document.getElementById('inputPhone').value.trim(),
+                origin: document.getElementById('inputOrigin').value.trim(),
+                target: document.getElementById('inputTarget').value,
+                purpose: document.getElementById('inputPurpose').value.trim(),
+                signature: signatureData,
+                timestamp: new Date().toISOString()
+            };
+
+            guests.unshift(newGuest);
+            localStorage.setItem('puskesmas_guests_simple', JSON.stringify(guests));
+
+            // Reset form
+            document.getElementById('guestForm').reset();
+            clearSignature();
+
+            // Refresh UI
+            renderGuestList();
+            updateStats();
+
+            showToast('Data kunjungan berhasil disimpan!', 'success');
+        }
+
+        // Render Guest List
+        function renderGuestList() {
+            const container = document.getElementById('guestListContainer');
+            if (!container) return;
+            
+            const query = (document.getElementById('searchInput').value || '').toLowerCase();
+
+            const filtered = guests.filter(g => 
+                g.name.toLowerCase().includes(query) ||
+                g.origin.toLowerCase().includes(query) ||
+                g.target.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-inbox text-3xl mb-2"></i>
+                        <p class="text-xs font-semibold">Belum ada data kunjungan</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(g => {
+                const dateObj = new Date(g.timestamp);
+                const timeFormatted = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                const initials = g.name.substring(0, 2).toUpperCase();
+
+                return `
+                    <div onclick="openDetailModal('${g.id}')" class="p-3 bg-white/70 hover:bg-tealBrand-50/80 border border-slate-200/70 hover:border-tealBrand-300 rounded-2xl cursor-pointer transition shadow-sm flex items-center justify-between group">
+                        <div class="flex items-center gap-3 truncate">
+                            <div class="w-9 h-9 rounded-xl bg-tealBrand-100 text-tealBrand-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                ${initials}
+                            </div>
+                            <div class="truncate">
+                                <h4 class="text-xs font-bold text-slate-800 group-hover:text-tealBrand-700 truncate">${escapeHtml(g.name)}</h4>
+                                <p class="text-[11px] text-slate-500 truncate">${escapeHtml(g.origin)} &bull; <span class="text-tealBrand-600 font-medium">${escapeHtml(g.target)}</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[10px] font-semibold bg-white/80 px-2 py-1 rounded-lg border border-slate-200/80 text-slate-500">${timeFormatted}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update Statistics Counters
+        function updateStats() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayCount = guests.filter(g => g.timestamp.startsWith(todayStr)).length;
+
+            const statToday = document.getElementById('statToday');
+            const statTotal = document.getElementById('statTotal');
+
+            if (statToday) statToday.textContent = todayCount;
+            if (statTotal) statTotal.textContent = guests.length;
+        }
+
+        // Modal Guest Detail
+        function openDetailModal(id) {
+            const guest = guests.find(g => g.id === id);
+            if (!guest) return;
+
+            document.getElementById('modalName').textContent = guest.name;
+            document.getElementById('modalPhone').textContent = guest.phone;
+            document.getElementById('modalOrigin').textContent = guest.origin;
+            document.getElementById('modalTarget').textContent = guest.target;
+            document.getElementById('modalPurpose').textContent = guest.purpose;
+            document.getElementById('modalSignature').src = guest.signature;
+
+            const timeStr = new Date(guest.timestamp).toLocaleString('id-ID', {
+                dateStyle: 'full',
+                timeStyle: 'short'
+            });
+            document.getElementById('modalTime').textContent = timeStr;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Password Protection Logic
+        const ADMIN_PASSWORD = "puskesmaspkt";
+
+        function openRecapModal() {
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('passwordErrorMsg').classList.add('hidden');
+            document.getElementById('passwordModal').classList.remove('hidden');
+            setTimeout(() => {
+                const input = document.getElementById('adminPasswordInput');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('adminPasswordInput');
+            const eyeIcon = document.getElementById('passwordEyeIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        function handlePasswordSubmit(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('adminPasswordInput').value;
+            const errorEl = document.getElementById('passwordErrorMsg');
+
+            if (inputVal === ADMIN_PASSWORD) {
+                closePasswordModal();
+                setRecapFilter('today');
+                document.getElementById('recapModal').classList.remove('hidden');
+                showToast('Akses rekapitulasi diberikan', 'success');
+            } else {
+                errorEl.classList.remove('hidden');
+                document.getElementById('adminPasswordInput').focus();
+            }
+        }
+
+        function closeRecapModal() {
+            document.getElementById('recapModal').classList.add('hidden');
+        }
+
+        function setRecapFilter(filterType) {
+            currentRecapFilter = filterType;
+            
+            const buttons = {
+                'today': 'filterTodayBtn',
+                'month': 'filterMonthBtn',
+                'year': 'filterYearBtn',
+                'all': 'filterAllBtn'
+            };
+
+            Object.keys(buttons).forEach(key => {
+                const btn = document.getElementById(buttons[key]);
+                if (!btn) return;
+                if (key === filterType) {
+                    btn.className = "recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-emerald-600 text-white border-emerald-600 transition";
+                } else {
+                    btn.className = "recap-filter-btn px-3 py-2 text-xs font-bold rounded-xl border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition";
+                }
+            });
+
+            updateRecapPreview();
+        }
+
+        function getFilteredGuestsForRecap() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            return guests.filter(g => {
+                const gDate = new Date(g.timestamp);
+                if (currentRecapFilter === 'today') {
+                    return g.timestamp.startsWith(todayStr);
+                } else if (currentRecapFilter === 'month') {
+                    return gDate.getMonth() === currentMonth && gDate.getFullYear() === currentYear;
+                } else if (currentRecapFilter === 'year') {
+                    return gDate.getFullYear() === currentYear;
+                }
+                return true; // 'all'
+            });
+        }
+
+        function getFilterLabel(filter) {
+            if (filter === 'today') return 'Hari Ini';
+            if (filter === 'month') return 'Bulan Ini';
+            if (filter === 'year') return 'Tahun Ini';
+            return 'Semua Data';
+        }
+
+        function updateRecapPreview() {
+            const filtered = getFilteredGuestsForRecap();
+            const total = filtered.length;
+            document.getElementById('recapTotalCount').textContent = total;
+
+            const targetCounts = {};
+            filtered.forEach(g => {
+                targetCounts[g.target] = (targetCounts[g.target] || 0) + 1;
+            });
+
+            let topTarget = '-';
+            let maxCount = 0;
+            for (const [target, count] of Object.entries(targetCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topTarget = target;
+                }
+            }
+            document.getElementById('recapTopTarget').textContent = topTarget;
+
+            const tbody = document.getElementById('recapTableBody');
+            tbody.innerHTML = '';
+
+            if (total === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400">Tidak ada data untuk periode ini</td></tr>`;
+                return;
+            }
+
+            for (const [target, count] of Object.entries(targetCounts)) {
+                const pct = ((count / total) * 100).toFixed(1);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2.5 font-medium text-slate-800">${escapeHtml(target)}</td>
+                    <td class="p-2.5 text-right font-bold text-slate-900">${count}</td>
+                    <td class="p-2.5 text-right text-tealBrand-700 font-semibold">${pct}%</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // Export directly to Excel (.xlsx) using SheetJS
+        function exportToExcel() {
+            const filteredGuests = getFilteredGuestsForRecap();
+            if (filteredGuests.length === 0) {
+                showToast('Tidak ada data kunjungan untuk periode ini.', 'warning');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                showToast('Pustaka Excel sedang dimuat, silakan coba lagi.', 'warning');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // SHEET 1: Rekapitulasi Summary
+            const targetCounts = {};
+            filteredGuests.forEach(g => {
+                targetCounts[g.target] = (targetCounts[g.target] || 0) + 1;
+            });
+
+            const recapRows = [
+                ["LAPORAN REKAPITULASI KUNJUNGAN - PUSKESMAS PAKUTANDANG"],
+                ["Periode Laporan:", getFilterLabel(currentRecapFilter)],
+                ["Tanggal Cetak:", new Date().toLocaleString('id-ID')],
+                [],
+                ["NO", "BAGIAN / TUJUAN", "JUMLAH KUNJUNGAN", "PERSENTASE (%)"]
+            ];
+
+            let rowNo = 1;
+            const totalCount = filteredGuests.length;
+            for (const [target, count] of Object.entries(targetCounts)) {
+                const pct = ((count / totalCount) * 100).toFixed(1) + "%";
+                recapRows.push([rowNo++, target, count, pct]);
+            }
+            recapRows.push([]);
+            recapRows.push(["", "TOTAL KUNJUNGAN", totalCount, "100%"]);
+
+            const wsRecap = XLSX.utils.aoa_to_sheet(recapRows);
+            wsRecap['!cols'] = [{ wch: 6 }, { wch: 35 }, { wch: 20 }, { wch: 15 }];
+            XLSX.utils.book_append_sheet(wb, wsRecap, "Rekapitulasi");
+
+            // SHEET 2: Detail Guest Data
+            const detailRows = [
+                ["NO", "TANGGAL & WAKTU", "NAMA LENGKAP", "NO. TELEPON", "INSTANSI / ASAL", "BAGIAN TUJUAN", "MAKSUD KEPERLUAN"]
+            ];
+
+            filteredGuests.forEach((g, idx) => {
+                const timeStr = new Date(g.timestamp).toLocaleString('id-ID');
+                detailRows.push([
+                    idx + 1,
+                    timeStr,
+                    g.name,
+                    g.phone,
+                    g.origin,
+                    g.target,
+                    g.purpose
+                ]);
+            });
+
+            const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
+            wsDetail['!cols'] = [
+                { wch: 6 },
+                { wch: 22 },
+                { wch: 25 },
+                { wch: 18 },
+                { wch: 25 },
+                { wch: 28 },
+                { wch: 35 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Guest Data");
+
+            // Download File
+            const fileName = `Rekap_Kunjungan_Puskesmas_${currentRecapFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            showToast('Laporan Excel (.xlsx) berhasil diunduh!', 'success');
+        }
+
+        // Reset Data Modal Logic
+        function confirmClearAll() {
+            if (guests.length === 0) {
+                showToast('Tidak ada data yang dapat dihapus.', 'warning');
+                return;
+            }
+            document.getElementById('confirmClearModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmClearModal').classList.add('hidden');
+        }
+
+        function clearAllData() {
+            guests = [];
+            localStorage.removeItem('puskesmas_guests_simple');
+            renderGuestList();
+            updateStats();
+            closeConfirmModal();
+            showToast('Seluruh data berhasil dibersihkan.', 'success');
+        }
+
+        // Helper Utilities
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-slate-800 text-white";
+            let icon = "fa-info-circle";
+
+            if (type === 'success') {
+                bgClass = "bg-emerald-600 text-white";
+                icon = "fa-circle-check";
+            } else if (type === 'warning') {
+                bgClass = "bg-amber-500 text-white";
+                icon = "fa-triangle-exclamation";
+            }
+
+            toast.className = `${bgClass} px-4 py-3 rounded-2xl shadow-lg font-bold text-xs flex items-center gap-2 animate-in fade-in slide-in-from-bottom duration-200 min-w-[240px]`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
